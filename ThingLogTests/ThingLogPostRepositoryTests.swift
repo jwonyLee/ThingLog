@@ -377,6 +377,54 @@ class ThingLogPostRepositoryTests: XCTestCase {
             }
         }
     }
+
+    func test_Post를_삭제하면_PostType도_삭제된다() {
+        // given: 필요한 모든 값 설정
+        clearAllCoreData()
+        guard let newPost = dummyPost(1).first else {
+            XCTFail("Failed create dummy post")
+            return
+        }
+        create(newPost)
+        let context: NSManagedObjectContext = CoreDataStack.shared.mainContext
+        let postTypefetchedResultsController: NSFetchedResultsController<PostTypeEntity> = {
+            let fetchRequest: NSFetchRequest<PostTypeEntity> = PostTypeEntity.fetchRequest()
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "type", ascending: false)]
+
+            let controller: NSFetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
+                                                                                    managedObjectContext: context,
+                                                                                    sectionNameKeyPath: nil, cacheName: nil)
+            do {
+                try controller.performFetch()
+            } catch {
+                let nserror: NSError = error as NSError
+                fatalError("###\(#function): Failed to performFetch: \(nserror), \(nserror.userInfo)")
+            }
+            return controller
+        }()
+
+        print("😂 삭제하기 전")
+        postTypefetchedResultsController.fetchedObjects?.forEach({ entity in
+            print("⚡️ \(entity.type)")
+            print("⚡️ \(entity.post)")
+        })
+        print("😂 삭제하기 전")
+
+        // when: 테스트중인 코드 실행
+        deleteAllEntity()
+        print("⚡️ post Count: ", self.postRepository.fetchedResultsController.fetchedObjects?.count)
+        // then: 예상한 결과 확인
+        print("⚡️ postType Count: \(postTypefetchedResultsController.fetchedObjects?.count)")
+        XCTAssertEqual(self.postRepository.fetchedResultsController.fetchedObjects?.count,
+                       postTypefetchedResultsController.fetchedObjects?.count)
+        print("😂 삭제 후")
+        postTypefetchedResultsController.fetchedObjects?.forEach({ entity in
+            print("⚡️ \(entity.type)")
+            print("⚡️ \(entity.post)")
+        })
+        print("😂 삭제 후")
+
+    }
 }
 
 extension ThingLogPostRepositoryTests {
