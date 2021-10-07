@@ -315,7 +315,7 @@ class ThingLogPostRepositoryTests: XCTestCase {
         }
     }
 
-    func test_PostType을_변경할_수_있다() {
+    func test_Post의_PostType을_변경하면_PostType_객체도_변경된다() {
         // given: 필요한 모든 값 설정
         clearAllCoreData()
         guard let originalImage: UIImage = UIImage(systemName: "heart.fill") else {
@@ -326,30 +326,19 @@ class ThingLogPostRepositoryTests: XCTestCase {
             .init(title: "Hardware"),
             .init(title: "Life")
         ]
-        var newPost1: Post = .init(title: "Test Post",
-                                   price: 30_500,
-                                   purchasePlace: "Market",
-                                   contents: "Test Contents...",
-                                   giftGiver: nil,
-                                   postType: .init(isDelete: false, type: .bought),
-                                   rating: .init(score: .excellent),
-                                   categories: categories,
-                                   attachments: [Attachment(thumbnail: originalImage,
-                                                            imageData: .init(originalImage: originalImage))])
-        let newPost2: Post = .init(title: "Test Post",
-                                   price: 30_500,
-                                   purchasePlace: "Market",
-                                   contents: "Test Contents...",
-                                   giftGiver: nil,
-                                   postType: .init(isDelete: false, type: .bought),
-                                   rating: .init(score: .excellent),
-                                   categories: categories,
-                                   attachments: [Attachment(thumbnail: originalImage,
-                                                            imageData: .init(originalImage: originalImage))])
-        create(newPost1)
-        create(newPost2)
+        var newPost: Post = .init(title: "Test Post",
+                                  price: 30_500,
+                                  purchasePlace: "Market",
+                                  contents: "Test Contents...",
+                                  giftGiver: nil,
+                                  postType: .init(isDelete: false, type: .bought),
+                                  rating: .init(score: .excellent),
+                                  categories: categories,
+                                  attachments: [Attachment(thumbnail: originalImage,
+                                                           imageData: .init(originalImage: originalImage))])
+        create(newPost)
         let context: NSManagedObjectContext = CoreDataStack.shared.mainContext
-        lazy var fetchedResultsController: NSFetchedResultsController<PostTypeEntity> = {
+        let postTypefetchedResultsController: NSFetchedResultsController<PostTypeEntity> = {
             let fetchRequest: NSFetchRequest<PostTypeEntity> = PostTypeEntity.fetchRequest()
             fetchRequest.sortDescriptors = [NSSortDescriptor(key: "type", ascending: false)]
 
@@ -364,23 +353,20 @@ class ThingLogPostRepositoryTests: XCTestCase {
             }
             return controller
         }()
-        print("😎 before update : ", fetchedResultsController.fetchedObjects)
 
         // when: 테스트중인 코드 실행
-        newPost1.postType = .init(isDelete: false, type: .gift)
+        newPost.postType = .init(isDelete: false, type: .gift)
         timeout(15) { exp in
-            postRepository.update(newPost1) { updateResult in
+            postRepository.update(newPost) { updateResult in
                 switch updateResult {
                 case .success(_):
-                    self.postRepository.get(withIdentifier: newPost1.identifier) { getResult in
+                    self.postRepository.get(withIdentifier: newPost.identifier) { getResult in
                         exp.fulfill()
                         switch getResult {
                         case .success(let postEntity):
                             // then: 예상한 결과 확인
-                            print("⚡️ \(fetchedResultsController.fetchedObjects)")
-                            XCTAssertEqual(fetchedResultsController.fetchedObjects?.count == 2,
+                            XCTAssertEqual(postTypefetchedResultsController.fetchedObjects?.count == 1,
                                            postEntity.postType?.pageType == PageType.gift)
-                            print("🥰", fetchedResultsController.fetchedObjects?.count)
                         case .failure(let error):
                             XCTFail(error.localizedDescription)
                         }
@@ -474,10 +460,10 @@ extension XCTestCase {
             return container
         }()
         let entities = persistentContainer.managedObjectModel.entities
-        entities.compactMap({ $0.name }).forEach(clearDeepObjectEntity)
+        entities.compactMap({ $0.name }).forEach(clearAllObjectEntity)
     }
 
-    func clearDeepObjectEntity(_ entity: String) {
+    func clearAllObjectEntity(_ entity: String) {
         let context = CoreDataStack.shared.mainContext
 
         let deleteFetch = NSFetchRequest<NSFetchRequestResult>(entityName: entity)
