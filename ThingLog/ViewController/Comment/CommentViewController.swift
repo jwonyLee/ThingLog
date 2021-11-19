@@ -29,6 +29,8 @@ final class CommentViewController: BaseViewController {
     }()
 
     // MARK: - Properties
+    var tableViewBottomConstraint: NSLayoutConstraint?
+    var tableViewBottomSafeAnchorConstraint: NSLayoutConstraint?
     var commentInputViewBottomConstraint: NSLayoutConstraint?
     var coordinator: Coordinator?
 
@@ -55,6 +57,7 @@ final class CommentViewController: BaseViewController {
     }
 
     override func setupView() {
+        view.backgroundColor = SwiftGenColors.white.color
         view.addSubviews(tableView, commentInputView)
 
         setupTableView()
@@ -64,5 +67,14 @@ final class CommentViewController: BaseViewController {
     override func setupBinding() {
         bindKeyboardWillShow()
         bindKeyboardWillHide()
+    }
+
+    /// 댓글 편집 모드 여부에 따라 CommentInputView를 숨김/표시한다.
+    func hideCommentInputView(_ bool: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            self?.commentInputView.isHidden = bool
+            self?.tableViewBottomConstraint?.isActive = !bool
+            self?.tableViewBottomSafeAnchorConstraint?.isActive = bool
+        }
     }
 }
